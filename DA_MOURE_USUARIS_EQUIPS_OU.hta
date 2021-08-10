@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>MOURE USUARIS I EQUIPS UNITAT ORGANITZATIVA</title>
+ 
+    <HTA:APPLICATION
+        APPLICATIONNAME = "moure usuaris i eqips OU"
+		id="moure usuaris i eqips OU"
+		name="moure usuaris i eqips OU"
+		meta charset="UTF-8"
+    />
+	
+	<script language="vbscript">
+	On Error Resume Next
+	
+	
+
+	'CONSTANTS PER TRADUCCIO DE NOMS'
+	Const ADS_NAME_INITTYPE_GC = 3
+	Const ADS_NAME_TYPE_NT4 = 3
+	Const ADS_NAME_TYPE_1779 = 1
+
+	
+	Dim objFSO, objFile, strFileName
+
+	
+'-------------------------------------'
+'INICI BOTO EXECUTA'
+	Sub Executa
+
+			strOU = "LDAP://" & txt_ou.value		'OU DESTÍ'
+
+		'CHECK BOX PER ESCOLLIR SI ES MOU USUARI O EQUIP'
+
+		'usuari'		
+			if usuari.checked = true then	'SI check button radio es USUARI'
+
+				strText = txt_entrada.Value				'línia per usuari'
+    			arrLines = Split(strText, vbCrLf)
+    			For Each strLine in arrLines
+				
+					Set objSystemInfo = CreateObject("ADSystemInfo") 
+					strDomain = objSystemInfo.DomainShortName
+					strUser = strLine
+
+					strDNUser= GetUserDN(strUser,StrDomain)		'obtenir distinguished name'
+					strDNUser = "LDAP://" & strDNUser			'obtenir distinguished name + LDAP'
+					strCNUser = "cn=" & strUser				'obtenir cn	'
+					
+					'MOU USUARI OU'
+					set objCont = GetObject(strOU)
+					objCont.MoveHere strDNUser, strCNUser	
+					resultat = resultat & strUser & vbCrLf
+					
+				next
+
+				resultat = resultat & vbCrLf
+				resultat = resultat & "***************************************************" & vbCrLf
+				resultat = resultat & "S'HAN MOGUT CORRECTAMENT ELS USUARIS A LA UO:" & vbCrLf 
+				resultat = resultat & strOu & "  " & vbCrLf
+				resultat = resultat & "***************************************************" & vbCrLf
+				txt_sortida.value = resultat
+
+			end if
+
+		'equip'
+		if equip.checked = true then	'SI check button radio es EQUIP'
+			
+			strText = txt_entrada.Value				'línia per usuari'
+    			arrLines = Split(strText, vbCrLf)
+    			For Each strLine in arrLines
+				
+					Set objSystemInfo = CreateObject("ADSystemInfo") 
+					strDomain = objSystemInfo.DomainShortName
+					strComputer = strLine
+
+					strDNComputer= getComputerDN(strComputer,StrDomain)		'obtenir distinguished name'
+					strDNComputer = "LDAP://" & strDNComputer			'obtenir distinguished name + LDAP'
+					strCNComputer = "cn=" & strComputer				'obtenir cn	'
+
+					'MOU EQUIP OU'
+					set objCont = GetObject(strOU)
+					objCont.MoveHere strDNComputer, strCNComputer	
+					resultat = resultat & strComputer & vbCrLf
+					
+
+				next
+
+				resultat = resultat & vbCrLf
+				resultat = resultat & "***************************************************" & vbCrLf
+				resultat = resultat & "S'HAN MOGUT CORRECTAMENT ELS EQUIPS A LA UO:" & vbCrLf 
+				resultat = resultat & strOu & "  " & vbCrLf
+				resultat = resultat & "***************************************************" & vbCrLf
+				txt_sortida.value = resultat
+
+		end if
+			
+
+
+		'CRIDA DE FUNCIO NETEJA FITXER TXT PER MOSTRAR DE NOU RESULTATS EN txt_sortida'
+
+End Sub
+'FI BOTO EXECUTA'
+'-------------------------------------'
+
+
+'FUNCIO OBTENIR DISTINGUESHED NAME USUARI'
+function GetUserDN(byval strUserName,byval strDomain)
+	set objTrans = CreateObject("NameTranslate")
+	objTrans.Init 1, strDomain
+	objTrans.Set 3, strDomain & "\" & strUserName 
+	strUserDN = objTrans.Get(1) 
+	GetUserDN = strUserDN
+end function
+'-------------------------------------'
+
+'FUNCIO OBTENIR DISTINGUESHED NAME EQUIP'
+function getComputerDN(byval strComputer,byval strDomain)
+	' Function to get the distinguished name of a computer'
+	' from the NETBIOS name of the computer (strcomputer)'
+	' and the NETBIOS name of the domain (strDomain) using'
+	' name translate'
+
+	Set objTrans = CreateObject("NameTranslate")
+	' Initialize name translate using global catalog'
+	objTrans.Init ADS_NAME_INITTYPE_GC, ""
+	' Input computer name (NT Format)'
+	objTrans.Set ADS_NAME_TYPE_NT4, strDomain & "\" & strComputer & "$"
+	' Get Distinguished Name.'
+	getComputerDN = objTrans.Get(ADS_NAME_TYPE_1779)
+end function
+'-------------------------------------'
+
+
+	</script>
+	
+	</head>
+ 
+<body>
+    <h1>MOURE USUARIS I EQUIPS UNITAT ORGANITZATIVA</h1>
+    <p><i><b>* Important no deixar cap espai en blanc.</i></b></p>
+	
+	<textarea name="txt_entrada" rows=15 cols="50" ></textarea>
+	<br>
+	<input type="radio" name="radio" id="usuari" value="Usuari" checked><b>Usuari </b>
+	<input type="radio" name="radio" id="equip" value="equip"><b> Equip </b>
+	<br>
+	<br>
+	<p><h3>Unitat Organitzativa final (distinguished  name):</h3>
+	<textarea name="txt_ou" rows=1 cols="100" ></textarea> 		<i>* Exemple:   ou=equips,dc=domini,dc=com</i>
+	<br>
+	<br>
+	
+
+
+    
+
+    <!-- CAIXA TEXT RESULTAT -->
+    <input type="button" value="Moure elements" onclick="Executa">
+    <br>
+    <br>
+    <textarea name="txt_sortida" rows=20  cols=110></textarea>
+
+
+
+	
+</body>
+ 
+</html>
